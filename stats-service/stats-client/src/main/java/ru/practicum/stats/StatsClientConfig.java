@@ -16,7 +16,8 @@ public class StatsClientConfig {
     }
 
     @Bean
-    public StatsClient statsClient(RestClient statsRestClient) {
-        return new StatsClient(statsRestClient);
+    public StatsClient statsClient(RestClient statsRestClient,
+                                   @Value("${stats.app-name}") String appName) {
+        return new StatsClient(statsRestClient, appName);
     }
 }

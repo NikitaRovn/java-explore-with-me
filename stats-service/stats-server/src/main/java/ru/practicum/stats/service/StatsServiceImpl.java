@@ -5,11 +5,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.stats.dto.EndpointHitDto;
 import ru.practicum.stats.dto.ViewStatsDto;
-import ru.practicum.stats.model.EndpointHit;
+import ru.practicum.stats.mapper.StatsMapper;
 import ru.practicum.stats.repository.EndpointHitRepository;
 
 @Service
@@ -26,12 +27,7 @@ public class StatsServiceImpl implements StatsService {
     @Override
     @Transactional
     public void addHit(EndpointHitDto endpointHitDto) {
-        EndpointHit hit = new EndpointHit();
-        hit.setApp(endpointHitDto.getApp());
-        hit.setUri(endpointHitDto.getUri());
-        hit.setIp(endpointHitDto.getIp());
-        hit.setTimestamp(parseDateTime(endpointHitDto.getTimestamp()));
-        endpointHitRepository.save(hit);
+        endpointHitRepository.save(StatsMapper.toEntity(endpointHitDto));
     }
 
     @Override
@@ -46,7 +42,7 @@ public class StatsServiceImpl implements StatsService {
                 : endpointHitRepository.findStats(startTime, endTime, uriFilter, urisEmpty);
 
         return stats.stream()
-                .map(this::toDto)
+                .map(StatsMapper::toDto)
                 .collect(Collectors.toList());
     }
 
