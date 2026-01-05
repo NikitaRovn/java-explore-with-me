@@ -47,14 +47,6 @@ public class StatsServiceImpl implements StatsService {
                 .collect(Collectors.toList());
     }
 
-    private ViewStatsDto toDto(EndpointHitRepository.ViewStatsProjection projection) {
-        ViewStatsDto dto = new ViewStatsDto();
-        dto.setApp(projection.getApp());
-        dto.setUri(projection.getUri());
-        dto.setHits(projection.getHits());
-        return dto;
-    }
-
     private LocalDateTime parseDateTime(String value) {
         return LocalDateTime.parse(value, FORMATTER);
     }
