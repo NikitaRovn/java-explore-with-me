@@ -1,14 +1,37 @@
 services:
   stats-server:
+    build: ./stats-service/stats-server
     ports:
       - "9090:9090"
+    env_file:
+      - .env
+    depends_on:
+      - stats-db
 
   stats-db:
     image: postgres:16.1
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${STATS_DB_NAME}
+      POSTGRES_USER: ${STATS_DB_USER}
+      POSTGRES_PASSWORD: ${STATS_DB_PASSWORD}
+    ports:
+      - "5433:5432"
 
   ewm-service:
+    build: ./main-service
     ports:
       - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - ewm-db
+      - stats-server
 
   ewm-db:
     image: postgres:16.1
+    environment:
+      POSTGRES_DB: ${EWM_DB_NAME}
+      POSTGRES_USER: ${EWM_DB_USER}
+      POSTGRES_PASSWORD: ${EWM_DB_PASSWORD}

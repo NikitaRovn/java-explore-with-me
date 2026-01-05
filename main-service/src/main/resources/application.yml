@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://ewm-db:5432/${EWM_DB_NAME:stats}
+    username: ${EWM_DB_USER:stats}
+    password: ${EWM_DB_PASSWORD:stats}
+
+stats:
+  base-url: http://stats-server:9090
