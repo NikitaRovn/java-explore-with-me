@@ -264,21 +264,32 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     public EventFullDto getPublicEvent(long eventId, HttpServletRequest request) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException("Событие с id=" + eventId + " не найдено."));
+                .orElseThrow(() -> new NotFoundException(String.format(EVENT_NOT_FOUND, eventId)));
         if (event.getState() != EventState.PUBLISHED) {
-            throw new NotFoundException("Событие с id=" + eventId + " не найдено.");
+            throw new NotFoundException(String.format(EVENT_NOT_FOUND, eventId));
         }
         statsClient.addHit(request);
         return toFullDto(event);
     }
 
     private void applyUserUpdate(Event event, UpdateEventUserRequest request) {
+
+        applyCommonUpdate(event, request);
+        applyUserStateAction(event, request);
+    }
+
+    private void applyAdminUpdate(Event event, UpdateEventAdminRequest request) {
+        applyCommonUpdate(event, request);
+        applyAdminStateAction(event, request);
+    }
+
+    private void applyCommonUpdate(Event event, UpdateEventRequest request) {
         if (request.getAnnotation() != null) {
             event.setAnnotation(request.getAnnotation());
         }
         if (request.getCategory() != null) {
             Category category = categoryRepository.findById(request.getCategory())
-                    .orElseThrow(() -> new NotFoundException("Категория с id=" + request.getCategory() + " не найдена."));
+                    .orElseThrow(() -> new NotFoundException(String.format(CATEGORY_NOT_FOUND, request.getCategory())));
             event.setCategory(category);
         }
         if (request.getDescription() != null) {
@@ -302,6 +313,9 @@ public class EventServiceImpl implements EventService {
         if (request.getTitle() != null) {
             event.setTitle(request.getTitle());
         }
+    }
+
+    private void applyUserStateAction(Event event, UpdateEventUserRequest request) {
         if (request.getStateAction() == EventUserStateAction.SEND_TO_REVIEW) {
             event.setState(EventState.PENDING);
         }
@@ -310,36 +324,7 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private void applyAdminUpdate(Event event, UpdateEventAdminRequest request) {
-        if (request.getAnnotation() != null) {
-            event.setAnnotation(request.getAnnotation());
-        }
-        if (request.getCategory() != null) {
-            Category category = categoryRepository.findById(request.getCategory())
-                    .orElseThrow(() -> new NotFoundException("Категория с id=" + request.getCategory() + " не найдена."));
-            event.setCategory(category);
-        }
-        if (request.getDescription() != null) {
-            event.setDescription(request.getDescription());
-        }
-        if (request.getEventDate() != null) {
-            event.setEventDate(request.getEventDate());
-        }
-        if (request.getLocation() != null) {
-            event.setLocation(request.getLocation());
-        }
-        if (request.getPaid() != null) {
-            event.setPaid(request.getPaid());
-        }
-        if (request.getParticipantLimit() != null) {
-            event.setParticipantLimit(request.getParticipantLimit());
-        }
-        if (request.getRequestModeration() != null) {
-            event.setRequestModeration(request.getRequestModeration());
-        }
-        if (request.getTitle() != null) {
-            event.setTitle(request.getTitle());
-        }
+    private void applyAdminStateAction(Event event, UpdateEventAdminRequest request) {
         if (request.getStateAction() == EventAdminStateAction.PUBLISH_EVENT) {
             if (event.getState() != EventState.PENDING) {
                 throw new ConflictException("Событие не в статусе ожидания публикации.");
