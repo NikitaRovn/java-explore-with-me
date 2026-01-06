@@ -144,7 +144,7 @@ public class CompilationServiceImpl implements CompilationService {
                 .map(event -> "/events/" + event.getId())
                 .toList();
         String end = LocalDateTime.now().format(FORMATTER);
-        List<ViewStatsDto> stats = statsClient.getStats(DEFAULT_START, end, uris, false);
+        List<ViewStatsDto> stats = statsClient.getStats(DEFAULT_START, end, uris, true);
         Map<String, Long> hitsByUri = stats.stream()
                 .collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits));
         Map<Long, Long> result = new HashMap<>();

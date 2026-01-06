@@ -4,6 +4,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -42,6 +43,12 @@ public class ApiExceptionHandler {
                 .findFirst()
                 .map(error -> "Поле: " + error.getField() + ". Ошибка: " + error.getDefaultMessage())
                 .orElse("Ошибка валидации.");
+        return buildResponse(message, "Некорректный запрос.", HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingRequestParam(MissingServletRequestParameterException exception) {
+        String message = "Отсутствует обязательный параметр: " + exception.getParameterName();
         return buildResponse(message, "Некорректный запрос.", HttpStatus.BAD_REQUEST);
     }
 

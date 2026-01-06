@@ -70,7 +70,7 @@ public class EventServiceImpl implements EventService {
         Category category = categoryRepository.findById(dto.getCategory())
                 .orElseThrow(() -> new NotFoundException(String.format(CATEGORY_NOT_FOUND, dto.getCategory())));
         if (dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ConflictException("Дата события должна быть минимум через 2 часа.");
+            throw new BadRequestException("Дата события должна быть минимум через 2 часа.");
         }
         Event event = new Event();
         event.setAnnotation(dto.getAnnotation());
@@ -122,7 +122,7 @@ public class EventServiceImpl implements EventService {
         }
         applyUserUpdate(event, request);
         if (event.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ConflictException("Дата события должна быть минимум через 2 часа.");
+            throw new BadRequestException("Дата события должна быть минимум через 2 часа.");
         }
         return toFullDto(eventRepository.save(event));
     }
@@ -210,7 +210,7 @@ public class EventServiceImpl implements EventService {
                 .orElseThrow(() -> new NotFoundException(String.format(EVENT_NOT_FOUND, eventId)));
         applyAdminUpdate(event, request);
         if (event.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
-            throw new ConflictException("Дата события должна быть минимум через час.");
+            throw new BadRequestException("Дата события должна быть минимум через час.");
         }
         return toFullDto(eventRepository.save(event));
     }
@@ -410,7 +410,7 @@ public class EventServiceImpl implements EventService {
                 .map(event -> "/events/" + event.getId())
                 .toList();
         String end = LocalDateTime.now().format(FORMATTER);
-        List<ViewStatsDto> stats = statsClient.getStats(DEFAULT_START, end, uris, false);
+        List<ViewStatsDto> stats = statsClient.getStats(DEFAULT_START, end, uris, true);
         Map<String, Long> hitsByUri = stats.stream()
                 .collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits));
         Map<Long, Long> result = new HashMap<>();
