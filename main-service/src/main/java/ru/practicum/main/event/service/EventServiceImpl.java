@@ -88,19 +88,7 @@ public class EventServiceImpl implements EventService {
         if (dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new BadRequestException("Дата события должна быть минимум через 2 часа.");
         }
-        Event event = new Event();
-        event.setAnnotation(dto.getAnnotation());
-        event.setCategory(category);
-        event.setDescription(dto.getDescription());
-        event.setEventDate(dto.getEventDate());
-        event.setCreatedOn(LocalDateTime.now());
-        event.setInitiator(user);
-        event.setLocation(dto.getLocation());
-        event.setPaid(Boolean.TRUE.equals(dto.getPaid()));
-        event.setParticipantLimit(dto.getParticipantLimit() == null ? 0 : dto.getParticipantLimit());
-        event.setRequestModeration(dto.getRequestModeration() == null || dto.getRequestModeration());
-        event.setState(EventState.PENDING);
-        event.setTitle(dto.getTitle());
+        Event event = EventMapper.toEvent(dto, category, user);
         Event saved = eventRepository.save(event);
         return EventMapper.toFullDto(saved, 0, 0);
     }
