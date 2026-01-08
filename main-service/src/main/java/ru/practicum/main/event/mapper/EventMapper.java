@@ -16,6 +16,10 @@ public final class EventMapper {
     private EventMapper() {
     }
 
+    public static EventFullDto toFullDto(Event event) {
+        return toFullDto(event, 0, 0);
+    }
+
     public static EventFullDto toFullDto(Event event, long confirmedRequests, long views) {
         if (event == null) {
             return null;

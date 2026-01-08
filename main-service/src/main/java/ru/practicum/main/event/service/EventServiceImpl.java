@@ -90,7 +90,7 @@ public class EventServiceImpl implements EventService {
         }
         Event event = EventMapper.toEvent(dto, category, user);
         Event saved = eventRepository.save(event);
-        return EventMapper.toFullDto(saved, 0, 0);
+        return EventMapper.toFullDto(saved);
     }
 
     @Override
