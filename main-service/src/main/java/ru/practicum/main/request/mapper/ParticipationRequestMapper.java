@@ -26,12 +26,12 @@ public final class ParticipationRequestMapper {
                 .build();
     }
 
-    public static ParticipationRequest toEntity(Event event, User requester, RequestStatus status, LocalDateTime created) {
-        ParticipationRequest request = new ParticipationRequest();
-        request.setEvent(event);
-        request.setRequester(requester);
-        request.setStatus(status);
-        request.setCreated(created);
-        return request;
+    public static ParticipationRequest toEntity(Event event, User requester, RequestStatus status) {
+        return ParticipationRequest.builder()
+                .event(event)
+                .requester(requester)
+                .status(status)
+                .created(LocalDateTime.now())
+                .build();
     }
 }

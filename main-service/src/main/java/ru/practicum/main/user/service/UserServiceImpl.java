@@ -17,6 +17,8 @@ import ru.practicum.main.user.repository.UserRepository;
 
 import java.util.List;
 
+import static ru.practicum.main.utility.Constant.USER_NOT_FOUND;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -53,7 +55,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void delete(long id) {
         if (!repository.existsById(id)) {
-            throw new NotFoundException("Пользователь с id=" + id + " не найден.");
+            throw new NotFoundException(String.format(USER_NOT_FOUND, id));
         }
         repository.deleteById(id);
     }

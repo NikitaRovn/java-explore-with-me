@@ -76,8 +76,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         ParticipationRequest request = ParticipationRequestMapper.toEntity(
                 event,
                 requester,
-                status,
-                LocalDateTime.now());
+                status);
         return ParticipationRequestMapper.toDto(requestRepository.save(request));
     }
 
