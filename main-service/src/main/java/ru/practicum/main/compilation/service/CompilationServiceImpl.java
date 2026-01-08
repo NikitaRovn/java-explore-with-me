@@ -15,7 +15,6 @@ import ru.practicum.main.event.model.Event;
 import ru.practicum.main.event.mapper.EventMapper;
 import ru.practicum.main.event.repository.EventRepository;
 import ru.practicum.main.event.dto.EventShortDto;
-import ru.practicum.main.exception.BadRequestException;
 import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.request.repository.ParticipationRequestRepository;
 import ru.practicum.main.request.enums.RequestCount;
@@ -28,6 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -95,7 +95,6 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     @Transactional(readOnly = true)
     public List<CompilationDto> getCompilations(Boolean pinned, int from, int size) {
-        ensurePagination(from, size);
         Pageable pageable = PageRequest.of(from / size, size, Sort.by("id"));
         List<Compilation> compilations;
         if (pinned == null) {
@@ -146,25 +145,28 @@ public class CompilationServiceImpl implements CompilationService {
         if (events.isEmpty()) {
             return Map.of();
         }
-        String end = LocalDateTime.now().format(FORMATTER);
         Map<Long, Long> result = new HashMap<>();
-        for (Event event : events) {
-            String start = event.getPublishedOn() == null
-                    ? DEFAULT_START
-                    : event.getPublishedOn().format(FORMATTER);
-            String uri = "/events/" + event.getId();
-            List<ViewStatsDto> stats = statsClient.getStats(start, end, List.of(uri), true);
-            long hits = stats.stream()
-                    .collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits))
-                    .getOrDefault(uri, 0L);
-            result.put(event.getId(), hits);
+        Map<String, Long> uriToEventId = events.stream()
+                .filter(event -> event.getPublishedOn() != null)
+                .collect(Collectors.toMap(event -> "/events/" + event.getId(), Event::getId));
+        if (uriToEventId.isEmpty()) {
+            return result;
+        }
+        LocalDateTime earliestPublished = events.stream()
+                .map(Event::getPublishedOn)
+                .filter(Objects::nonNull)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+        String start = earliestPublished == null
+                ? DEFAULT_START
+                : earliestPublished.format(FORMATTER);
+        String end = LocalDateTime.now().format(FORMATTER);
+        List<ViewStatsDto> stats = statsClient.getStats(start, end, uriToEventId.keySet().stream().toList(), true);
+        Map<String, Long> hitsByUri = stats.stream()
+                .collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits));
+        for (Map.Entry<String, Long> entry : uriToEventId.entrySet()) {
+            result.put(entry.getValue(), hitsByUri.getOrDefault(entry.getKey(), 0L));
         }
         return result;
-    }
-
-    private void ensurePagination(int from, int size) {
-        if (from < 0 || size <= 0) {
-            throw new BadRequestException("Номер страницы должен быть положительный.");
-        }
     }
 }
