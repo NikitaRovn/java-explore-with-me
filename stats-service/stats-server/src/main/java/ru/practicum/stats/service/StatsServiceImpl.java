@@ -6,6 +6,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,14 +19,11 @@ import ru.practicum.stats.repository.EndpointHitRepository;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class StatsServiceImpl implements StatsService {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final EndpointHitRepository endpointHitRepository;
-
-    public StatsServiceImpl(EndpointHitRepository endpointHitRepository) {
-        this.endpointHitRepository = endpointHitRepository;
-    }
 
     @Override
     @Transactional

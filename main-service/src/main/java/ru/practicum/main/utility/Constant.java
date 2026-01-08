@@ -7,4 +7,6 @@ public final class Constant {
     }
 
     public static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    public static final String NOT_INITIATOR = "Пользователь не является инициатором события.";
 }

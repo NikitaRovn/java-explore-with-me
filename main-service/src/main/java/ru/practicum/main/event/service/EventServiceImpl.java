@@ -24,6 +24,7 @@ import ru.practicum.main.event.model.Event;
 import ru.practicum.main.event.repository.EventRepository;
 import ru.practicum.main.exception.BadRequestException;
 import ru.practicum.main.exception.ConflictException;
+import ru.practicum.main.exception.ForbiddenException;
 import ru.practicum.main.exception.NotFoundException;
 import ru.practicum.main.request.model.EventRequestStatusUpdateRequest;
 import ru.practicum.main.request.model.EventRequestStatusUpdateResult;
@@ -48,6 +49,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ru.practicum.main.utility.Constant.FORMATTER;
+import static ru.practicum.main.utility.Constant.NOT_INITIATOR;
 
 @Service
 @Transactional
@@ -118,7 +120,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException(String.format(EVENT_NOT_FOUND, eventId)));
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new NotFoundException(String.format(EVENT_NOT_FOUND, eventId));
+            throw new ForbiddenException(NOT_INITIATOR);
         }
         return toFullDto(event);
     }
@@ -128,7 +130,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException(String.format(EVENT_NOT_FOUND, eventId)));
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new NotFoundException(String.format(EVENT_NOT_FOUND, eventId));
+            throw new ForbiddenException(NOT_INITIATOR);
         }
         if (event.getState() == EventState.PUBLISHED) {
             throw new ConflictException("Опубликованное событие нельзя изменить.");
@@ -146,7 +148,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException(String.format(EVENT_NOT_FOUND, eventId)));
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new NotFoundException(String.format(EVENT_NOT_FOUND, eventId));
+            throw new ForbiddenException(NOT_INITIATOR);
         }
         return requestRepository.findByEventId(eventId).stream()
                 .map(ParticipationRequestMapper::toDto)
@@ -159,7 +161,7 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException(String.format(EVENT_NOT_FOUND, eventId)));
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new NotFoundException(String.format(EVENT_NOT_FOUND, eventId));
+            throw new ForbiddenException(NOT_INITIATOR);
         }
 
         List<ParticipationRequest> requests = requestRepository.findAllById(request.getRequestIds());

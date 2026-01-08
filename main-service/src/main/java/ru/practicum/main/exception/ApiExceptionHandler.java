@@ -15,6 +15,11 @@ import static ru.practicum.main.utility.Constant.FORMATTER;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> handleForbidden(ForbiddenException exception) {
+        return buildResponse(exception.getMessage(), "Доступ запрещен.", HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(NotFoundException exception) {
         return buildResponse(exception.getMessage(), "Запрашиваемый объект не найден.", HttpStatus.NOT_FOUND);
