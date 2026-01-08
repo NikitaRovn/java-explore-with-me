@@ -408,16 +408,18 @@ public class EventServiceImpl implements EventService {
         if (events.isEmpty()) {
             return Map.of();
         }
-        List<String> uris = events.stream()
-                .map(event -> "/events/" + event.getId())
-                .toList();
         String end = LocalDateTime.now().format(FORMATTER);
-        List<ViewStatsDto> stats = statsClient.getStats(DEFAULT_START, end, uris, true);
-        Map<String, Long> hitsByUri = stats.stream()
-                .collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits));
         Map<Long, Long> result = new HashMap<>();
         for (Event event : events) {
-            result.put(event.getId(), hitsByUri.getOrDefault("/events/" + event.getId(), 0L));
+            String start = event.getPublishedOn() == null
+                    ? DEFAULT_START
+                    : event.getPublishedOn().format(FORMATTER);
+            String uri = "/events/" + event.getId();
+            List<ViewStatsDto> stats = statsClient.getStats(start, end, List.of(uri), true);
+            long hits = stats.stream()
+                    .collect(Collectors.toMap(ViewStatsDto::getUri, ViewStatsDto::getHits))
+                    .getOrDefault(uri, 0L);
+            result.put(event.getId(), hits);
         }
         return result;
     }
