@@ -16,12 +16,12 @@ import ru.practicum.main.exception.NotFoundException;
 
 import java.util.List;
 
+import static ru.practicum.main.utility.Constant.CATEGORY_NOT_FOUND;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
-    private static final String CATEGORY_NOT_FOUND = "Категория с id=%d не найдена.";
-
     private final CategoryRepository repository;
     private final EventRepository eventRepository;
 

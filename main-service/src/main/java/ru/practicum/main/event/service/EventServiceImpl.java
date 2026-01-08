@@ -49,16 +49,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static ru.practicum.main.utility.Constant.CATEGORY_NOT_FOUND;
+import static ru.practicum.main.utility.Constant.DEFAULT_START;
+import static ru.practicum.main.utility.Constant.EVENT_NOT_FOUND;
 import static ru.practicum.main.utility.Constant.FORMATTER;
 import static ru.practicum.main.utility.Constant.NOT_INITIATOR;
 
 @Service
 @Transactional
 public class EventServiceImpl implements EventService {
-    private static final String DEFAULT_START = "1970-01-01 00:00:00";
-    private static final String CATEGORY_NOT_FOUND = "Категория с id=%d не найдена.";
-    private static final String COMPILATION_NOT_FOUND = "Подборка с id=%d не найдена.";
-    private static final String EVENT_NOT_FOUND = "Событие с id=%d не найдено.";
     private static final String EVENT_DATE = "eventDate";
 
     private final EventRepository eventRepository;
@@ -154,7 +153,8 @@ public class EventServiceImpl implements EventService {
             throw new ForbiddenException(NOT_INITIATOR);
         }
 
-        List<ParticipationRequest> requests = requestRepository.findAllById(request.getRequestIds());
+        List<Long> requestIds = request.getRequestIds();
+        List<ParticipationRequest> requests = requestRepository.findAllById(requestIds);
         long confirmedCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
         List<ParticipationRequestDto> confirmed = new ArrayList<>();
         List<ParticipationRequestDto> rejected = new ArrayList<>();
@@ -168,11 +168,13 @@ public class EventServiceImpl implements EventService {
             }
             if (request.getStatus() == RequestUpdateStatus.CONFIRMED) {
                 if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
-                    throw new ConflictException("Достигнут лимит участников.");
+                    participationRequest.setStatus(RequestStatus.REJECTED);
+                    rejected.add(ParticipationRequestMapper.toDto(participationRequest));
+                } else {
+                    participationRequest.setStatus(RequestStatus.CONFIRMED);
+                    confirmedCount++;
+                    confirmed.add(ParticipationRequestMapper.toDto(participationRequest));
                 }
-                participationRequest.setStatus(RequestStatus.CONFIRMED);
-                confirmedCount++;
-                confirmed.add(ParticipationRequestMapper.toDto(participationRequest));
             } else {
                 participationRequest.setStatus(RequestStatus.REJECTED);
                 rejected.add(ParticipationRequestMapper.toDto(participationRequest));
@@ -181,7 +183,10 @@ public class EventServiceImpl implements EventService {
 
         List<ParticipationRequest> toSave = new ArrayList<>(requests);
         if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
-            List<ParticipationRequest> pending = requestRepository.findByEventIdAndStatus(eventId, RequestStatus.PENDING);
+            List<ParticipationRequest> pending = requestRepository.findByEventIdAndStatus(eventId, RequestStatus.PENDING)
+                    .stream()
+                    .filter(pendingRequest -> !requestIds.contains(pendingRequest.getId()))
+                    .toList();
             for (ParticipationRequest participationRequest : pending) {
                 participationRequest.setStatus(RequestStatus.REJECTED);
                 rejected.add(ParticipationRequestMapper.toDto(participationRequest));

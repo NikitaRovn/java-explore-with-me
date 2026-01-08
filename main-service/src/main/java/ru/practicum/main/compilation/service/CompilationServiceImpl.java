@@ -31,14 +31,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static ru.practicum.main.utility.Constant.COMPILATION_NOT_FOUND;
+import static ru.practicum.main.utility.Constant.DEFAULT_START;
 import static ru.practicum.main.utility.Constant.FORMATTER;
 
 @Service
 @Transactional
 public class CompilationServiceImpl implements CompilationService {
-    private static final String DEFAULT_START = "1970-01-01 00:00:00";
-    private static final String COMPILATION_NOT_FOUND = "Подборка с id=%d не найдена.";
-
     private final CompilationRepository compilationRepository;
     private final EventRepository eventRepository;
     private final ParticipationRequestRepository requestRepository;

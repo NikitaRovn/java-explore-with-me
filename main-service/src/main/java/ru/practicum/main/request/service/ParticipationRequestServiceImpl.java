@@ -18,12 +18,12 @@ import ru.practicum.main.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static ru.practicum.main.utility.Constant.EVENT_NOT_FOUND;
+import static ru.practicum.main.utility.Constant.USER_NOT_FOUND;
+
 @Service
 @Transactional
 public class ParticipationRequestServiceImpl implements ParticipationRequestService {
-    private static final String EVENT_NOT_FOUND = "Событие с id=%d не найдено.";
-    private static final String USER_NOT_FOUND = "Пользователь с id=%d не найден.";
-
     private final ParticipationRequestRepository requestRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
