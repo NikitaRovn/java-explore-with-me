@@ -14,6 +14,12 @@ public final class CompilationMapper {
         if (compilation == null) {
             return null;
         }
-        return new CompilationDto(events, compilation.getId(), compilation.isPinned(), compilation.getTitle());
+
+        return CompilationDto.builder()
+                .events(events)
+                .id(compilation.getId())
+                .pinned(compilation.isPinned())
+                .title(compilation.getTitle())
+                .build();
     }
 }

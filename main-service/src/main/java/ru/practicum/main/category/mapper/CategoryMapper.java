@@ -12,13 +12,20 @@ public final class CategoryMapper {
         if (category == null) {
             return null;
         }
-        return new CategoryDto(category.getId(), category.getName());
+
+        return CategoryDto.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .build();
     }
 
     public static Category toEntity(NewCategoryDto dto) {
         if (dto == null) {
             return null;
         }
-        return new Category(null, dto.getName());
+
+        return Category.builder()
+                .name(dto.getName())
+                .build();
     }
 }

@@ -11,12 +11,13 @@ public final class ParticipationRequestMapper {
         if (request == null) {
             return null;
         }
-        return new ParticipationRequestDto(
-                request.getCreated(),
-                request.getEvent().getId(),
-                request.getId(),
-                request.getRequester().getId(),
-                request.getStatus()
-        );
+
+        return ParticipationRequestDto.builder()
+                .created(request.getCreated())
+                .event(request.getEvent() != null ? request.getEvent().getId() : null)
+                .id(request.getId())
+                .requester(request.getRequester() != null ? request.getRequester().getId() : null)
+                .status(request.getStatus())
+                .build();
     }
 }
