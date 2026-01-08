@@ -1,7 +1,7 @@
 package ru.practicum.main.event.service;
 
 import jakarta.servlet.http.HttpServletRequest;
-import ru.practicum.main.event.enums.EventSort;
+import ru.practicum.main.event.dto.PublicEventSearchRequest;
 import ru.practicum.main.event.enums.EventState;
 import ru.practicum.main.event.model.UpdateEventAdminRequest;
 import ru.practicum.main.event.model.UpdateEventUserRequest;
@@ -33,9 +33,7 @@ public interface EventService {
 
     EventFullDto updateAdminEvent(long eventId, UpdateEventAdminRequest request);
 
-    List<EventShortDto> getPublicEvents(String text, List<Long> categories, Boolean paid,
-                                        String rangeStart, String rangeEnd, Boolean onlyAvailable,
-                                        EventSort sort, int from, int size, HttpServletRequest servletRequest);
+    List<EventShortDto> getPublicEvents(PublicEventSearchRequest request, HttpServletRequest servletRequest);
 
     EventFullDto getPublicEvent(long eventId, HttpServletRequest request);
 }

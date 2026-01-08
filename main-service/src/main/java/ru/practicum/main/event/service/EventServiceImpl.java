@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.main.category.model.Category;
 import ru.practicum.main.category.repository.CategoryRepository;
+import ru.practicum.main.event.dto.PublicEventSearchRequest;
 import ru.practicum.main.event.enums.EventAdminStateAction;
 import ru.practicum.main.event.enums.EventSort;
 import ru.practicum.main.event.enums.EventState;
@@ -232,29 +233,30 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventShortDto> getPublicEvents(String text, List<Long> categories, Boolean paid,
-                                               String rangeStart, String rangeEnd, Boolean onlyAvailable,
-                                               EventSort sort, int from, int size, HttpServletRequest servletRequest) {
-        ensurePagination(from, size);
-        LocalDateTime start = parseDate(rangeStart);
-        LocalDateTime end = parseDate(rangeEnd);
+    public List<EventShortDto> getPublicEvents(PublicEventSearchRequest request,
+                                               HttpServletRequest servletRequest) {
+        ensurePagination(request.getFrom(), request.getSize());
+        LocalDateTime start = parseDate(request.getRangeStart());
+        LocalDateTime end = parseDate(request.getRangeEnd());
         if (start != null && end != null && start.isAfter(end)) {
             throw new BadRequestException("Диапазон дат указан неверно.");
         }
         if (start == null && end == null) {
             start = LocalDateTime.now();
         }
-        Specification<Event> specification = buildPublicSpecification(text, categories, paid, start, end);
+        Specification<Event> specification = buildPublicSpecification(request.getText(), request.getCategories(),
+                request.getPaid(), start, end);
 
         List<Event> events;
-        if (sort == EventSort.VIEWS) {
+        if (request.getSort() == EventSort.VIEWS) {
             events = eventRepository.findAll(specification);
         } else {
-            Pageable pageable = PageRequest.of(from / size, size, Sort.by(EVENT_DATE));
+            Pageable pageable = PageRequest.of(request.getFrom() / request.getSize(), request.getSize(),
+                    Sort.by(EVENT_DATE));
             events = eventRepository.findAll(specification, pageable).getContent();
         }
 
-        if (Boolean.TRUE.equals(onlyAvailable)) {
+        if (Boolean.TRUE.equals(request.getOnlyAvailable())) {
             Map<Long, Long> confirmedMap = getConfirmedRequests(events);
             events = events.stream()
                     .filter(event -> event.getParticipantLimit() == 0
@@ -263,12 +265,12 @@ public class EventServiceImpl implements EventService {
         }
 
         List<EventShortDto> result = toShortDtos(events);
-        if (sort == EventSort.VIEWS) {
+        if (Boolean.TRUE.equals(request.getOnlyAvailable())) {
             result = result.stream()
                     .sorted(Comparator.comparingLong(EventShortDto::getViews).reversed())
                     .toList();
-            int startIndex = Math.min(from, result.size());
-            int endIndex = Math.min(from + size, result.size());
+            int startIndex = Math.min(request.getFrom(), result.size());
+            int endIndex = Math.min(request.getFrom() + request.getSize(), result.size());
             result = result.subList(startIndex, endIndex);
         }
         statsClient.addHit(servletRequest);
