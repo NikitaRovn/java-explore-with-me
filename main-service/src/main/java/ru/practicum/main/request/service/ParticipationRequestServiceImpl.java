@@ -15,7 +15,6 @@ import ru.practicum.main.request.repository.ParticipationRequestRepository;
 import ru.practicum.main.user.model.User;
 import ru.practicum.main.user.repository.UserRepository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static ru.practicum.main.utility.Constant.EVENT_NOT_FOUND;
@@ -76,8 +75,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         ParticipationRequest request = ParticipationRequestMapper.toEntity(
                 event,
                 requester,
-                status,
-                LocalDateTime.now());
+                status);
         return ParticipationRequestMapper.toDto(requestRepository.save(request));
     }
 

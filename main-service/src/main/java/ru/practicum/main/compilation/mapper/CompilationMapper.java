@@ -31,12 +31,10 @@ public final class CompilationMapper {
             return null;
         }
 
-        Compilation compilation = new Compilation();
-        compilation.setPinned(Boolean.TRUE.equals(dto.getPinned()));
-        compilation.setTitle(dto.getTitle());
-        if (events != null) {
-            compilation.setEvents(events);
-        }
-        return compilation;
+        return Compilation.builder()
+                .pinned(Boolean.TRUE.equals(dto.getPinned()))
+                .title(dto.getTitle())
+                .events(events)
+                .build();
     }
 }
