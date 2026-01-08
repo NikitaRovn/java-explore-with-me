@@ -1,6 +1,7 @@
 package ru.practicum.stats;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
@@ -12,16 +13,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+@RequiredArgsConstructor
 public class StatsClient {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final RestClient restClient;
     private final String app;
-
-    public StatsClient(RestClient restClient, String app) {
-        this.restClient = restClient;
-        this.app = app;
-    }
 
     public void addHit(HttpServletRequest request) {
         EndpointHitDto endpointHitDto = new EndpointHitDto();

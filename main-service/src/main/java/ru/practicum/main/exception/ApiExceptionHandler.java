@@ -9,13 +9,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+
+import static ru.practicum.main.utility.Constant.FORMATTER;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(NotFoundException exception) {
         return buildResponse(exception.getMessage(), "Запрашиваемый объект не найден.", HttpStatus.NOT_FOUND);
