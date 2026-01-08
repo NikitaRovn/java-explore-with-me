@@ -100,7 +100,7 @@ public class EventServiceImpl implements EventService {
         ensurePagination(from, size);
         Pageable pageable = PageRequest.of(from / size, size, Sort.by("id"));
         List<Event> events = eventRepository.findByInitiatorId(userId, pageable).getContent();
-        return toShortDtos(events);
+        return EventMapper.toShortDtos(events, getConfirmedRequests(events), getViews(events));
     }
 
     @Override
@@ -111,7 +111,7 @@ public class EventServiceImpl implements EventService {
         if (!event.getInitiator().getId().equals(userId)) {
             throw new ForbiddenException(NOT_INITIATOR);
         }
-        return toFullDto(event);
+        return EventMapper.toFullDto(event, getConfirmedRequests(List.of(event)), getViews(List.of(event)));
     }
 
     @Override
@@ -128,7 +128,8 @@ public class EventServiceImpl implements EventService {
         if (event.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
             throw new BadRequestException("Дата события должна быть минимум через 2 часа.");
         }
-        return toFullDto(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        return EventMapper.toFullDto(saved, getConfirmedRequests(List.of(saved)), getViews(List.of(saved)));
     }
 
     @Override
@@ -205,7 +206,7 @@ public class EventServiceImpl implements EventService {
         Specification<Event> specification = buildAdminSpecification(users, states, categories, start, end);
         Pageable pageable = PageRequest.of(from / size, size, Sort.by("id"));
         List<Event> events = eventRepository.findAll(specification, pageable).getContent();
-        return toFullDtos(events);
+        return EventMapper.toFullDtos(events, getConfirmedRequests(events), getViews(events));
     }
 
     @Override
@@ -216,7 +217,8 @@ public class EventServiceImpl implements EventService {
         if (event.getEventDate().isBefore(LocalDateTime.now().plusHours(1))) {
             throw new BadRequestException("Дата события должна быть минимум через час.");
         }
-        return toFullDto(eventRepository.save(event));
+        Event saved = eventRepository.save(event);
+        return EventMapper.toFullDto(saved, getConfirmedRequests(List.of(saved)), getViews(List.of(saved)));
     }
 
     @Override
@@ -252,7 +254,7 @@ public class EventServiceImpl implements EventService {
                     .toList();
         }
 
-        List<EventShortDto> result = toShortDtos(events);
+        List<EventShortDto> result = EventMapper.toShortDtos(events, getConfirmedRequests(events), getViews(events));
         if (Boolean.TRUE.equals(request.getOnlyAvailable())) {
             result = result.stream()
                     .sorted(Comparator.comparingLong(EventShortDto::getViews).reversed())
@@ -274,7 +276,7 @@ public class EventServiceImpl implements EventService {
             throw new NotFoundException(String.format(EVENT_NOT_FOUND, eventId));
         }
         statsClient.addHit(request);
-        return toFullDto(event);
+        return EventMapper.toFullDto(event, getConfirmedRequests(List.of(event)), getViews(List.of(event)));
     }
 
     private void applyUserUpdate(Event event, UpdateEventUserRequest request) {
@@ -343,38 +345,6 @@ public class EventServiceImpl implements EventService {
             }
             event.setState(EventState.CANCELED);
         }
-    }
-
-    private EventFullDto toFullDto(Event event) {
-        Map<Long, Long> confirmedMap = getConfirmedRequests(List.of(event));
-        Map<Long, Long> viewsMap = getViews(List.of(event));
-        return EventMapper.toFullDto(
-                event,
-                confirmedMap.getOrDefault(event.getId(), 0L),
-                viewsMap.getOrDefault(event.getId(), 0L)
-        );
-    }
-
-    private List<EventFullDto> toFullDtos(List<Event> events) {
-        Map<Long, Long> confirmedMap = getConfirmedRequests(events);
-        Map<Long, Long> viewsMap = getViews(events);
-        return events.stream()
-                .map(event -> EventMapper.toFullDto(
-                        event,
-                        confirmedMap.getOrDefault(event.getId(), 0L),
-                        viewsMap.getOrDefault(event.getId(), 0L)))
-                .toList();
-    }
-
-    private List<EventShortDto> toShortDtos(List<Event> events) {
-        Map<Long, Long> confirmedMap = getConfirmedRequests(events);
-        Map<Long, Long> viewsMap = getViews(events);
-        return events.stream()
-                .map(event -> EventMapper.toShortDto(
-                        event,
-                        confirmedMap.getOrDefault(event.getId(), 0L),
-                        viewsMap.getOrDefault(event.getId(), 0L)))
-                .toList();
     }
 
     private Map<Long, Long> getConfirmedRequests(List<Event> events) {

@@ -11,6 +11,8 @@ import ru.practicum.main.user.mapper.UserMapper;
 import ru.practicum.main.user.model.User;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 
 public final class EventMapper {
     private EventMapper() {
@@ -44,6 +46,24 @@ public final class EventMapper {
         );
     }
 
+    public static EventFullDto toFullDto(Event event, Map<Long, Long> confirmedMap, Map<Long, Long> viewsMap) {
+        if (event == null) {
+            return null;
+        }
+        return toFullDto(
+                event,
+                confirmedMap.getOrDefault(event.getId(), 0L),
+                viewsMap.getOrDefault(event.getId(), 0L)
+        );
+    }
+
+    public static List<EventFullDto> toFullDtos(List<Event> events, Map<Long, Long> confirmedMap,
+                                                Map<Long, Long> viewsMap) {
+        return events.stream()
+                .map(event -> toFullDto(event, confirmedMap, viewsMap))
+                .toList();
+    }
+
     public static EventShortDto toShortDto(Event event, long confirmedRequests, long views) {
         if (event == null) {
             return null;
@@ -61,6 +81,15 @@ public final class EventMapper {
         );
     }
 
+    public static List<EventShortDto> toShortDtos(List<Event> events, Map<Long, Long> confirmedMap,
+                                                  Map<Long, Long> viewsMap) {
+        return events.stream()
+                .map(event -> toShortDto(
+                        event,
+                        confirmedMap.getOrDefault(event.getId(), 0L),
+                        viewsMap.getOrDefault(event.getId(), 0L)))
+                .toList();
+    }
 
     public static Event toEvent(NewEventDto dto, Category category, User user) {
         if (dto == null) {
