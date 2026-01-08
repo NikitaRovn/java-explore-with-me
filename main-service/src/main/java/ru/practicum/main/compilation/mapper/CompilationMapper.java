@@ -6,6 +6,7 @@ import ru.practicum.main.compilation.model.Compilation;
 import ru.practicum.main.event.dto.EventShortDto;
 import ru.practicum.main.event.model.Event;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -31,10 +32,12 @@ public final class CompilationMapper {
             return null;
         }
 
+        Set<Event> safeEvents = events == null ? new HashSet<>() : events;
+
         return Compilation.builder()
                 .pinned(Boolean.TRUE.equals(dto.getPinned()))
                 .title(dto.getTitle())
-                .events(events)
+                .events(safeEvents)
                 .build();
     }
 }

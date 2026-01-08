@@ -55,10 +55,10 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     public CompilationDto create(NewCompilationDto dto) {
-        Set<Event> events = null;
+        Set<Event> events = new HashSet<>();
 
         if (dto.getEvents() != null && !dto.getEvents().isEmpty()) {
-            events = new HashSet<>(eventRepository.findAllById(dto.getEvents()));
+            events.addAll(eventRepository.findAllById(dto.getEvents()));
         }
 
         Compilation compilation = CompilationMapper.toEntity(dto, events);
@@ -115,7 +115,11 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     private CompilationDto toDto(Compilation compilation) {
-        List<Event> events = compilation.getEvents().stream().toList();
+        Set<Event> eventSet = compilation.getEvents();
+        if (eventSet == null) {
+            eventSet = Set.of();
+        }
+        List<Event> events = eventSet.stream().toList();
         Map<Long, Long> confirmed = getConfirmedRequests(events);
         Map<Long, Long> views = getViews(events);
         List<EventShortDto> eventDtos = events.stream()
