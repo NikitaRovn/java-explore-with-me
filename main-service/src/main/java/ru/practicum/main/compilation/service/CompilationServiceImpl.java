@@ -55,13 +55,13 @@ public class CompilationServiceImpl implements CompilationService {
 
     @Override
     public CompilationDto create(NewCompilationDto dto) {
-        Compilation compilation = new Compilation();
-        compilation.setPinned(Boolean.TRUE.equals(dto.getPinned()));
-        compilation.setTitle(dto.getTitle());
+        Set<Event> events = null;
+
         if (dto.getEvents() != null && !dto.getEvents().isEmpty()) {
-            Set<Event> events = new HashSet<>(eventRepository.findAllById(dto.getEvents()));
-            compilation.setEvents(events);
+            events = new HashSet<>(eventRepository.findAllById(dto.getEvents()));
         }
+
+        Compilation compilation = CompilationMapper.toEntity(dto, events);
         Compilation saved = compilationRepository.save(compilation);
         return toDto(saved);
     }

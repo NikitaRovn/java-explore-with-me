@@ -66,15 +66,18 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new ConflictException("Достигнут лимит участников.");
         }
 
-        ParticipationRequest request = new ParticipationRequest();
-        request.setEvent(event);
-        request.setRequester(requester);
-        request.setCreated(LocalDateTime.now());
+        RequestStatus status;
         if (!event.isRequestModeration() || event.getParticipantLimit() == 0) {
-            request.setStatus(RequestStatus.CONFIRMED);
+            status = RequestStatus.CONFIRMED;
         } else {
-            request.setStatus(RequestStatus.PENDING);
+            status = RequestStatus.PENDING;
         }
+
+        ParticipationRequest request = ParticipationRequestMapper.toEntity(
+                event,
+                requester,
+                status,
+                LocalDateTime.now());
         return ParticipationRequestMapper.toDto(requestRepository.save(request));
     }
 
