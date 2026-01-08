@@ -1,6 +1,7 @@
 package ru.practicum.main.event.service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -54,6 +55,7 @@ import static ru.practicum.main.utility.Constant.DEFAULT_START;
 import static ru.practicum.main.utility.Constant.EVENT_NOT_FOUND;
 import static ru.practicum.main.utility.Constant.FORMATTER;
 import static ru.practicum.main.utility.Constant.NOT_INITIATOR;
+import static ru.practicum.main.utility.Constant.USER_NOT_FOUND;
 
 @Service
 @Transactional
@@ -81,7 +83,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto addEvent(long userId, NewEventDto dto) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id=" + userId + " не найден."));
+                .orElseThrow(() -> new NotFoundException(String.format(USER_NOT_FOUND, userId)));
         Category category = categoryRepository.findById(dto.getCategory())
                 .orElseThrow(() -> new NotFoundException(String.format(CATEGORY_NOT_FOUND, dto.getCategory())));
         if (dto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
@@ -96,7 +98,6 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     public List<EventShortDto> getUserEvents(long userId, int from, int size) {
         ensureUserExists(userId);
-        ensurePagination(from, size);
         Pageable pageable = PageRequest.of(from / size, size, Sort.by("id"));
         List<Event> events = eventRepository.findByInitiatorId(userId, pageable).getContent();
         return EventMapper.toShortDtos(events, getConfirmedRequests(events), getViews(events));
@@ -147,62 +148,21 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventRequestStatusUpdateResult updateRequestsStatus(long userId, long eventId,
                                                                EventRequestStatusUpdateRequest request) {
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new NotFoundException(String.format(EVENT_NOT_FOUND, eventId)));
-        if (!event.getInitiator().getId().equals(userId)) {
-            throw new ForbiddenException(NOT_INITIATOR);
-        }
-
+        Event event = getEventWithInitiatorCheck(userId, eventId);
         List<Long> requestIds = request.getRequestIds();
         List<ParticipationRequest> requests = requestRepository.findAllById(requestIds);
+        validatePendingRequests(eventId, requests);
         long confirmedCount = requestRepository.countByEventIdAndStatus(eventId, RequestStatus.CONFIRMED);
-        List<ParticipationRequestDto> confirmed = new ArrayList<>();
-        List<ParticipationRequestDto> rejected = new ArrayList<>();
-
-        for (ParticipationRequest participationRequest : requests) {
-            if (!participationRequest.getEvent().getId().equals(eventId)) {
-                throw new ConflictException("Заявка не относится к событию.");
-            }
-            if (participationRequest.getStatus() != RequestStatus.PENDING) {
-                throw new ConflictException("Статус можно изменить только у ожидающих заявок.");
-            }
-            if (request.getStatus() == RequestUpdateStatus.CONFIRMED) {
-                if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
-                    participationRequest.setStatus(RequestStatus.REJECTED);
-                    rejected.add(ParticipationRequestMapper.toDto(participationRequest));
-                } else {
-                    participationRequest.setStatus(RequestStatus.CONFIRMED);
-                    confirmedCount++;
-                    confirmed.add(ParticipationRequestMapper.toDto(participationRequest));
-                }
-            } else {
-                participationRequest.setStatus(RequestStatus.REJECTED);
-                rejected.add(ParticipationRequestMapper.toDto(participationRequest));
-            }
-        }
-
-        List<ParticipationRequest> toSave = new ArrayList<>(requests);
-        if (event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit()) {
-            List<ParticipationRequest> pending = requestRepository.findByEventIdAndStatus(eventId, RequestStatus.PENDING)
-                    .stream()
-                    .filter(pendingRequest -> !requestIds.contains(pendingRequest.getId()))
-                    .toList();
-            for (ParticipationRequest participationRequest : pending) {
-                participationRequest.setStatus(RequestStatus.REJECTED);
-                rejected.add(ParticipationRequestMapper.toDto(participationRequest));
-            }
-            toSave.addAll(pending);
-        }
-
-        requestRepository.saveAll(toSave);
-        return new EventRequestStatusUpdateResult(confirmed, rejected);
+        RequestUpdateOutcome outcome = processStatusUpdate(event, requests, request.getStatus(), confirmedCount);
+        rejectRemainingPendingIfLimitReached(event, requestIds, outcome);
+        requestRepository.saveAll(outcome.getToSave());
+        return new EventRequestStatusUpdateResult(outcome.getConfirmed(), outcome.getRejected());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<EventFullDto> getAdminEvents(List<Long> users, List<EventState> states, List<Long> categories,
                                              String rangeStart, String rangeEnd, int from, int size) {
-        ensurePagination(from, size);
         LocalDateTime start = parseDate(rangeStart);
         LocalDateTime end = parseDate(rangeEnd);
         if (start != null && end != null && start.isAfter(end)) {
@@ -230,7 +190,6 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     public List<EventShortDto> getPublicEvents(PublicEventSearchRequest request,
                                                HttpServletRequest servletRequest) {
-        ensurePagination(request.getFrom(), request.getSize());
         LocalDateTime start = parseDate(request.getRangeStart());
         LocalDateTime end = parseDate(request.getRangeEnd());
         if (start != null && end != null && start.isAfter(end)) {
@@ -445,15 +404,96 @@ public class EventServiceImpl implements EventService {
         }
     }
 
-    private void ensurePagination(int from, int size) {
-        if (from < 0 || size <= 0) {
-            throw new BadRequestException("Номер страницы должен быть положительный.");
-        }
-    }
-
     private void ensureUserExists(long userId) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("Пользователь с id=" + userId + " не найден.");
         }
+    }
+
+
+    private Event getEventWithInitiatorCheck(long userId, long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException(String.format(EVENT_NOT_FOUND, eventId)));
+        if (!event.getInitiator().getId().equals(userId)) {
+            throw new ForbiddenException(NOT_INITIATOR);
+        }
+        return event;
+    }
+
+    private void validatePendingRequests(long eventId, List<ParticipationRequest> requests) {
+        for (ParticipationRequest participationRequest : requests) {
+            if (!participationRequest.getEvent().getId().equals(eventId)) {
+                throw new ConflictException("Заявка не относится к событию.");
+            }
+            if (participationRequest.getStatus() != RequestStatus.PENDING) {
+                throw new ConflictException("Статус можно изменить только у ожидающих заявок.");
+            }
+        }
+    }
+
+    private RequestUpdateOutcome processStatusUpdate(Event event, List<ParticipationRequest> requests,
+                                                     RequestUpdateStatus updateStatus, long confirmedCount) {
+        List<ParticipationRequestDto> confirmed = new ArrayList<>();
+        List<ParticipationRequestDto> rejected = new ArrayList<>();
+        List<ParticipationRequest> toSave = new ArrayList<>(requests);
+        long currentConfirmed = confirmedCount;
+
+        for (ParticipationRequest participationRequest : requests) {
+            if (updateStatus == RequestUpdateStatus.CONFIRMED) {
+                if (isLimitReached(event, currentConfirmed)) {
+                    participationRequest.setStatus(RequestStatus.REJECTED);
+                    rejected.add(ParticipationRequestMapper.toDto(participationRequest));
+                } else {
+                    participationRequest.setStatus(RequestStatus.CONFIRMED);
+                    currentConfirmed++;
+                    confirmed.add(ParticipationRequestMapper.toDto(participationRequest));
+                }
+            } else {
+                participationRequest.setStatus(RequestStatus.REJECTED);
+                rejected.add(ParticipationRequestMapper.toDto(participationRequest));
+            }
+        }
+
+        return new RequestUpdateOutcome(toSave, confirmed, rejected, currentConfirmed);
+    }
+
+    private void rejectRemainingPendingIfLimitReached(Event event, List<Long> requestIds,
+                                                      RequestUpdateOutcome outcome) {
+        if (!isLimitReached(event, outcome.getConfirmedCount())) {
+            return;
+        }
+        List<ParticipationRequest> pending = requestRepository.findByEventIdAndStatus(event.getId(),
+                        RequestStatus.PENDING)
+                .stream()
+                .filter(pendingRequest -> !requestIds.contains(pendingRequest.getId()))
+                .toList();
+        for (ParticipationRequest participationRequest : pending) {
+            participationRequest.setStatus(RequestStatus.REJECTED);
+            outcome.getRejected().add(ParticipationRequestMapper.toDto(participationRequest));
+        }
+        outcome.getToSave().addAll(pending);
+    }
+
+    private boolean isLimitReached(Event event, long confirmedCount) {
+        return event.getParticipantLimit() > 0 && confirmedCount >= event.getParticipantLimit();
+    }
+
+    @Getter
+    private static class RequestUpdateOutcome {
+        private final List<ParticipationRequest> toSave;
+        private final List<ParticipationRequestDto> confirmed;
+        private final List<ParticipationRequestDto> rejected;
+        private final long confirmedCount;
+
+        private RequestUpdateOutcome(List<ParticipationRequest> toSave,
+                                     List<ParticipationRequestDto> confirmed,
+                                     List<ParticipationRequestDto> rejected,
+                                     long confirmedCount) {
+            this.toSave = toSave;
+            this.confirmed = confirmed;
+            this.rejected = rejected;
+            this.confirmedCount = confirmedCount;
+        }
+
     }
 }
