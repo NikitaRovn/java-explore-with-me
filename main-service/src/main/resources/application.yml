@@ -1,8 +1,16 @@
 spring:
   datasource:
-    url: jdbc:postgresql://ewm-db:5432/${EWM_DB_NAME:stats}
-    username: ${EWM_DB_USER:stats}
-    password: ${EWM_DB_PASSWORD:stats}
+    url: jdbc:postgresql://ewm-db:5432/${EWM_DB_NAME:ewm}
+    username: ${EWM_DB_USER:ewm}
+    password: ${EWM_DB_PASSWORD:ewm}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+    open-in-view: false
 
 stats:
   base-url: http://stats-server:9090
+  app-name: ewm-main-service

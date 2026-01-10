@@ -31,6 +31,8 @@ services:
 
   ewm-db:
     image: postgres:16.1
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ${EWM_DB_NAME}
       POSTGRES_USER: ${EWM_DB_USER}
