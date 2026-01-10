@@ -3,6 +3,12 @@
     "name": "Feature - Comments",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    {
+      "key": "baseurl",
+      "value": "http://localhost:8080"
+    }
+  ],
   "item": [
     {
       "name": "Add comment",
