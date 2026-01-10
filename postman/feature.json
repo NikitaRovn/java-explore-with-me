@@ -15,8 +15,8 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/users/{{userId}}/comments?eventId={{eventId}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{baseurl}}/users/{{userId}}/comments?eventId={{eventId}}",
+          "host": ["{{baseurl}}"],
           "path": ["users", "{{userId}}", "comments"],
           "query": [
             {
@@ -54,8 +54,8 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/users/{{userId}}/comments/{{commentId}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{baseurl}}/users/{{userId}}/comments/{{commentId}}",
+          "host": ["{{baseurl}}"],
           "path": ["users", "{{userId}}", "comments", "{{commentId}}"]
         },
         "body": {
@@ -87,8 +87,8 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/admin/comments/{{commentId}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{baseurl}}/admin/comments/{{commentId}}",
+          "host": ["{{baseurl}}"],
           "path": ["admin", "comments", "{{commentId}}"]
         },
         "body": {
@@ -114,8 +114,8 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{baseUrl}}/events/{{eventId}}/comments",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{baseurl}}/events/{{eventId}}/comments",
+          "host": ["{{baseurl}}"],
           "path": ["events", "{{eventId}}", "comments"]
         }
       },
@@ -137,8 +137,8 @@
       "request": {
         "method": "DELETE",
         "url": {
-          "raw": "{{baseUrl}}/users/{{userId}}/comments/{{commentId}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{baseurl}}/users/{{userId}}/comments/{{commentId}}",
+          "host": ["{{baseurl}}"],
           "path": ["users", "{{userId}}", "comments", "{{commentId}}"]
         }
       },
